@@ -19,6 +19,8 @@ body {
     background: linear-gradient(135deg, #f0f2f5 0%, #e9ecef 100%);
     margin: 0;
     padding: 20px;
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
     font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
     justify-content: center;
