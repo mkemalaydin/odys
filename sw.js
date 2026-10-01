@@ -10,7 +10,7 @@
  * çözme" sağlamaz, sadece uygulamanın kabuğunu hızlı ve kurulabilir yapar.
  */
 
-const CACHE_NAME = "odys-shell-v1";
+const CACHE_NAME = "odys-shell-v2";
 const SHELL_FILES = ["./index.html", "./style.css", "./app.js", "./manifest.json"];
 
 self.addEventListener("install", function (event) {

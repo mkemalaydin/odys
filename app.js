@@ -111,7 +111,7 @@ async function apiPost(action, payload) {
     return data;
   } catch (err) {
     console.error("API POST error:", err);
-    showToast("Sunucuya bağlanılamadı. Google Apps Script URL'sini kontrol edip tekrar deneyin.", "error");
+    showToast("Sunucu isteği başarısız (" + action + "): " + (err.message || "Bilinmeyen hata"), "error");
     return { success: false, message: "Bağlantı hatası" };
   } finally {
     showLoader(false);
@@ -140,7 +140,7 @@ async function apiGet(action, params) {
     return data;
   } catch (err) {
     console.error("API GET error:", err);
-    showToast("Sunucuya bağlanılamadı. Google Apps Script URL'sini kontrol edip tekrar deneyin.", "error");
+    showToast("Sunucu isteği başarısız (" + action + "): " + (err.message || "Bilinmeyen hata"), "error");
     return { success: false, message: "Bağlantı hatası" };
   } finally {
     showLoader(false);
