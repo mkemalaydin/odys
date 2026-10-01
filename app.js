@@ -1,22 +1,33 @@
 /**
  * ODYS - İstemci Tarafı Uygulama Mantığı (v2)
  *
- * ÖNEMLİ: Aşağıdaki API_URL değerini, Google Apps Script projenizi
- * "Web Uygulaması" olarak yayınladıktan sonra aldığınız /exec ile biten
- * URL ile değiştirmeniz gerekir (Dağıt > Yeni Dağıtım > Web Uygulaması).
+ * Google Apps Script Web App URL'si, yayınlandıktan sonra /exec ile biten
+ * adres olarak ayarlanmalıdır. Bu değer sabit kodlanmak yerine aşağıdaki
+ * yöntemlerden biriyle değiştirilebilir:
+ *   1) window.ODYS_API_URL = "https://.../exec";
+ *   2) localStorage.setItem("odys_api_url", "https://.../exec");
+ *   3) Tarayıcıda ?apiUrl=https://.../exec kullanımı
  *
- * v2 YENİLİKLERİ:
- * - Soru düzenleme/silme, esnek soru ekleme arayüzü (kart tabanlı, Excel'den
- *   içe aktarılan sorular da kaydetmeden önce düzenlenebiliyor)
- * - Sınav düzenleme (ad/süre/tarih), modal bileşeni
- * - Kişi bazlı karne: hem tek sınav istatistiklerinde hem ayrı "Öğrenci Profili"
- *   sekmesinde öğrencinin soru soru cevap dökümü
- * - Ölçme-değerlendirme: KR-20 güvenirlik, SEM, madde-toplam korelasyonu,
- *   çeldirici (distractor) analizi, z-puanı/yüzdelik dilim, geçme notu eşiği,
- *   küçük örneklem uyarısı
+ * Siber çalışma sırasında eski sabit URL açıkta kalmamalıdır; bomboş bir
+ * değer burada bırakılarak kullanıcıya net bir uyarlama mesajı gösterilir.
  */
 
-const API_URL = "https://script.google.com/macros/s/AKfycbztXfVRtKJWDpLpodQbCMkLYDKrQeD4YUDg2s-EJ9VlctdVSza0SxsoDg4O2Bs1a4unzg/exec";
+const DEFAULT_API_URL = "";
+
+function getApiUrl() {
+  const fromQuery = new URLSearchParams(window.location.search).get("apiUrl");
+  const fromStorage = localStorage.getItem("odys_api_url");
+  const fromWindow = window.ODYS_API_URL;
+  return (fromQuery || fromStorage || fromWindow || DEFAULT_API_URL || "").trim();
+}
+
+function ensureApiUrl() {
+  const apiUrl = getApiUrl();
+  if (!apiUrl) {
+    showToast("Sunucu URL'i tanımlı değil. Google Apps Script Web App URL'sini ekleyin veya ?apiUrl=... kullanın.", "error");
+  }
+  return apiUrl;
+}
 
 // ---------------------------------------------------------------------------
 // Genel durum (state)
@@ -76,16 +87,27 @@ document.addEventListener("keydown", function (e) {
 });
 
 async function apiPost(action, payload) {
+  const apiUrl = ensureApiUrl();
+  if (!apiUrl) {
+    return { success: false, message: "Sunucu URL'i tanımlı değil." };
+  }
+
   showLoader(true);
   try {
-    const res = await fetch(API_URL, {
+    const res = await fetch(apiUrl, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(Object.assign({ action: action }, payload || {}))
     });
+
+    if (!res.ok) {
+      throw new Error("HTTP " + res.status);
+    }
+
     return await res.json();
   } catch (err) {
-    showToast("Sunucuya bağlanılamadı. API_URL ayarını kontrol edin.", "error");
+    console.error("API POST error:", err);
+    showToast("Sunucuya bağlanılamadı. Google Apps Script URL'sini kontrol edip tekrar deneyin.", "error");
     return { success: false, message: "Bağlantı hatası" };
   } finally {
     showLoader(false);
@@ -93,13 +115,24 @@ async function apiPost(action, payload) {
 }
 
 async function apiGet(action, params) {
+  const apiUrl = ensureApiUrl();
+  if (!apiUrl) {
+    return { success: false, message: "Sunucu URL'i tanımlı değil." };
+  }
+
   showLoader(true);
   try {
     const qs = new URLSearchParams(Object.assign({ action: action }, params || {})).toString();
-    const res = await fetch(API_URL + "?" + qs);
+    const res = await fetch(apiUrl + "?" + qs);
+
+    if (!res.ok) {
+      throw new Error("HTTP " + res.status);
+    }
+
     return await res.json();
   } catch (err) {
-    showToast("Sunucuya bağlanılamadı. API_URL ayarını kontrol edin.", "error");
+    console.error("API GET error:", err);
+    showToast("Sunucuya bağlanılamadı. Google Apps Script URL'sini kontrol edip tekrar deneyin.", "error");
     return { success: false, message: "Bağlantı hatası" };
   } finally {
     showLoader(false);
