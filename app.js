@@ -12,7 +12,7 @@
  * değer burada bırakılarak kullanıcıya net bir uyarlama mesajı gösterilir.
  */
 
-const DEFAULT_API_URL = "https://script.google.com/macros/s/AKfycbzm7gFmYWhIol2C6G2O4nG9S8yszJ2jfWEcSXr_FCUF3Wg5vbuLuTNhD3VktnEARPsW3Q/exec";
+const DEFAULT_API_URL = "https://script.google.com/macros/s/AKfycbxiHRPlvrgJWkm_zw0Ot_FjsjIUNcSj_Zm4ltZgNtWHEM9eHQ0Nb77GkVmfMt8DQyNoRg/exec";
 
 function getApiUrl() {
   const fromQuery = new URLSearchParams(window.location.search).get("apiUrl");
