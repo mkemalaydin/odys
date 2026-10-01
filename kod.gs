@@ -285,9 +285,11 @@ function handleToggleExamActive(data) {
   const rows = sheet.getDataRange().getValues();
   for (let i = 1; i < rows.length; i++) {
     if (rows[i][0] === data.examId) {
-      const current = rows[i][4];
-      sheet.getRange(i + 1, 5).setValue(!current);
-      return ok({ isActive: !current });
+      const currentValue = rows[i][4];
+      const current = (currentValue === undefined || currentValue === null || currentValue === "") ? false : (String(currentValue).toLowerCase() === "true" || currentValue === true || currentValue === 1);
+      const nextValue = !current;
+      sheet.getRange(i + 1, 5).setValue(nextValue);
+      return ok({ isActive: nextValue });
     }
   }
   return fail("Sınav bulunamadı.");
@@ -440,9 +442,11 @@ function handleGetExams(params) {
   const now = new Date();
 
   const exams = rows.slice(1).map(function (r) {
+    const isActiveRaw = r[4];
+    const isActive = (isActiveRaw === undefined || isActiveRaw === null || isActiveRaw === "") ? false : (String(isActiveRaw).toLowerCase() === "true" || isActiveRaw === true || isActiveRaw === 1);
     return {
       id: r[0], name: r[1], durationMinutes: Number(r[3]) || 0,
-      isActive: r[4] !== false, startDate: r[5] || "", endDate: r[6] || ""
+      isActive: isActive, startDate: r[5] || "", endDate: r[6] || ""
     };
   }).filter(function (ex) {
     if (isAdmin) return true;

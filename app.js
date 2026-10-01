@@ -104,7 +104,11 @@ async function apiPost(action, payload) {
       throw new Error("HTTP " + res.status);
     }
 
-    return await res.json();
+    const data = await res.json();
+    if (data && data.success === false && !data.message) {
+      data.message = "İşlem başarısız.";
+    }
+    return data;
   } catch (err) {
     console.error("API POST error:", err);
     showToast("Sunucuya bağlanılamadı. Google Apps Script URL'sini kontrol edip tekrar deneyin.", "error");
@@ -129,7 +133,11 @@ async function apiGet(action, params) {
       throw new Error("HTTP " + res.status);
     }
 
-    return await res.json();
+    const data = await res.json();
+    if (data && data.success === false && !data.message) {
+      data.message = "İşlem başarısız.";
+    }
+    return data;
   } catch (err) {
     console.error("API GET error:", err);
     showToast("Sunucuya bağlanılamadı. Google Apps Script URL'sini kontrol edip tekrar deneyin.", "error");
@@ -506,9 +514,18 @@ async function saveExamEdit(examId) {
 }
 
 async function toggleExamActive(examId) {
+  if (!adminToken) {
+    showToast("Eğitmen girişi yapılmamış. Lütfen tekrar giriş yapın.", "error");
+    return;
+  }
+
   const res = await apiPost("toggleExamActive", { examId: examId, token: adminToken });
-  if (res.success) await loadAdminExamSelects();
-  else showToast(res.message || "İşlem başarısız.", "error");
+  if (res.success) {
+    await loadAdminExamSelects();
+    showToast(res.isActive ? "Sınav aktif edildi." : "Sınav pasifleştirildi.", res.isActive ? "success" : "info");
+  } else {
+    showToast(res.message || "İşlem başarısız.", "error");
+  }
 }
 
 async function deleteExam(examId, examName) {
