@@ -45,6 +45,25 @@ function normalizeCorrectOption(value) {
   return Object.prototype.hasOwnProperty.call(letterIndex, normalized) ? letterIndex[normalized] : value;
 }
 
+function normalizeExamCorrectOptions(questions) {
+  const numericValues = questions.map(function (q) {
+    const value = String(q.correct === undefined || q.correct === null ? "" : q.correct).trim();
+    return /^[1-5]$/.test(value) ? Number(value) : null;
+  });
+  const hasZeroBasedKey = questions.some(function (q) { return String(q.correct).trim() === "0"; });
+  const usesOneBasedKeys = !hasZeroBasedKey && numericValues.indexOf(5) !== -1;
+
+  return questions.map(function (q) {
+    const correct = normalizeCorrectOption(q.correct);
+    if (usesOneBasedKeys && /^[1-5]$/.test(String(correct).trim())) {
+      q.correct = Number(correct) - 1;
+    } else {
+      q.correct = correct;
+    }
+    return q;
+  });
+}
+
 function getOrCreateSheet(name, headers) {
   const ss = getSS();
   let sheet = ss.getSheetByName(name);
@@ -411,9 +430,9 @@ function handleSubmitExam(data) {
 
     const qSheet = getOrCreateSheet("Sorular");
     const qRows = qSheet.getDataRange().getValues();
-    const questions = qRows.slice(1).filter(function (r) { return String(r[0]) === examId; }).map(function (r) {
-      return { text: r[2], opts: [r[3], r[4], r[5], r[6], r[7]], correct: normalizeCorrectOption(r[8]) };
-    });
+    const questions = normalizeExamCorrectOptions(qRows.slice(1).filter(function (r) { return String(r[0]) === examId; }).map(function (r) {
+      return { text: r[2], opts: [r[3], r[4], r[5], r[6], r[7]], correct: r[8] };
+    }));
     if (!questions.length) return fail("Sınav soruları bulunamadı.");
 
     const answers = Array.isArray(data.answers) ? data.answers : [];
@@ -472,10 +491,10 @@ function handleGetQuestions(params) {
 
   const questions = rows.slice(1).filter(function (r) { return String(r[0]) === params.examId; }).map(function (r) {
     const q = { text: r[2], opts: [r[3], r[4], r[5], r[6], r[7]] };
-    if (includeAnswer) q.correct = normalizeCorrectOption(r[8]);
+    if (includeAnswer) q.correct = r[8];
     return q;
   });
-  return ok({ questions: questions });
+  return ok({ questions: includeAnswer ? normalizeExamCorrectOptions(questions) : questions });
 }
 
 function handleGetResults(params) {
