@@ -39,6 +39,12 @@ function fail(message, extra) {
   return jsonOut(Object.assign({ success: false, message: message }, extra || {}));
 }
 
+function normalizeCorrectOption(value) {
+  const letterIndex = { A: 0, B: 1, C: 2, D: 3, E: 4 };
+  const normalized = String(value === undefined || value === null ? "" : value).trim().toUpperCase();
+  return Object.prototype.hasOwnProperty.call(letterIndex, normalized) ? letterIndex[normalized] : value;
+}
+
 function getOrCreateSheet(name, headers) {
   const ss = getSS();
   let sheet = ss.getSheetByName(name);
@@ -406,7 +412,7 @@ function handleSubmitExam(data) {
     const qSheet = getOrCreateSheet("Sorular");
     const qRows = qSheet.getDataRange().getValues();
     const questions = qRows.slice(1).filter(function (r) { return String(r[0]) === examId; }).map(function (r) {
-      return { text: r[2], opts: [r[3], r[4], r[5], r[6], r[7]], correct: r[8] };
+      return { text: r[2], opts: [r[3], r[4], r[5], r[6], r[7]], correct: normalizeCorrectOption(r[8]) };
     });
     if (!questions.length) return fail("Sınav soruları bulunamadı.");
 
@@ -466,7 +472,7 @@ function handleGetQuestions(params) {
 
   const questions = rows.slice(1).filter(function (r) { return String(r[0]) === params.examId; }).map(function (r) {
     const q = { text: r[2], opts: [r[3], r[4], r[5], r[6], r[7]] };
-    if (includeAnswer) q.correct = r[8];
+    if (includeAnswer) q.correct = normalizeCorrectOption(r[8]);
     return q;
   });
   return ok({ questions: questions });
